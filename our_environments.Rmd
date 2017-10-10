@@ -1,0 +1,18 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r }
+list(
+  Christine = "x86_64-w64-mingw32/x64 (64-bit)",
+  Tony = "i386-w64-mingw32/i386 (32-bit)",
+  Tsai = "x86_64-apple-darwin15.6.0 (64-bit)",
+  Liu = "x86_64-apple-darwin15.6.0 (64-bit)",
+  Hu = "x86_64-w64-mingw32/x64 (64-bit)",
+  Lin = "x86_64-w64-mingw32/x64 (64-bit)"
+)
+```
