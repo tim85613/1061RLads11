@@ -1,0 +1,400 @@
+---
+output: 
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE)
+```
+
+R 語言與資料科學導論作業 Midterm Bonus
+======================================
+
+第11組 微專案: 六都市長臉書PK:選民情緒反應分析
+
+```{r, message = FALSE, warning=FALSE}
+library(httr)
+library(jsonlite)
+library(dplyr)
+library(Rfacebook)
+library(tidyverse)
+library(readr)
+library(jsonlite)
+library(plotly)
+```
+
+
+```{r, results='hide', message = FALSE}
+token = "EAAWgKYNfQKgBAEELZCUTzYByNkvHDyjvXxmThPwSgcT5ZAcMyZBZA3HZA5GHBFKzZCNP8HA3KvCc1KY1AvaTEQjpZBdYedJujV4ZAt5F6d4Rtn71quIdQr0nee9P8bRmkZBKIF6laILNRC09btLP3ZC4h0jOIHIdlkNllFcZAUqH99oZBBldkdxYzvjDTDRxhgjoN9d4ACBoTYPZCZCQZDZD"
+postnames <- c("llchu", "forpeople", "DoctorKoWJ", "kikuChen", "chengwentsan", "chingte")
+city <- c("NewTaipei", "Taichung", "Taipei", "Kaohsiung", "Tauyuan", "Tainan")
+index <- c(1:6)
+react <- list()
+each_react_avg <- data.frame("likes", "love", "haha", "wow", "sad", "angry")
+
+all.f <- data.frame()
+for( i in index){
+  page <- getPage(page = postnames[i], token=token, n = 1000, reactions = TRUE, feed = FALSE, since = "2017/08/01", until = "2017/10/31")
+  react <- getReactions(post = page$id, token = token)
+  city.df <- data.frame("city" = rep(city[i], nrow(react)))
+  all.f <- rbind(all.f, cbind( react, city.df))
+}
+
+
+```
+
+## 一、總和各市長的reactions{.tabset}
+```{r, message = FALSE}
+all.reaction <- cbind.data.frame(
+  "likes" = aggregate(likes_count~city, all.f, sum)[[2]],
+  "love" = aggregate(love_count~city, all.f, sum)[[2]],
+  "haha" = aggregate(haha_count~city, all.f, sum)[[2]],
+  "wow" = aggregate(wow_count~city, all.f, sum)[[2]],
+  "sad" = aggregate(sad_count~city, all.f, sum)[[2]],
+  "angry" = aggregate(angry_count~city, all.f, sum)[[2]]
+)
+
+rownames(all.reaction) <- c("朱立倫", "林佳龍", "柯文哲", "陳菊", "鄭文燦", "賴清德")
+reaction <- c("likes","love","haha","wow","sad","angry")
+```
+
+### New Taipei City
+```{r, message = FALSE}
+#為了要做出圖，得先建立子資料集，這個資料集的「reaction類別」與「統計量」得要轉成行(column)，繪圖程式才能讀
+df <- data.frame(reaction,
+                 count = unlist(as.vector(all.reaction[1,])))
+
+#計算各 reaction 所佔的比例
+df <- mutate(df,percent = round(df$count/sum(df$count),digits = 3)) 
+
+ggplot(data = df) + #用 ggplot 繪圖，資料使用剛剛產生的 df
+geom_bar(stat = "identity",aes(x="",y = count,fill = reaction)) + #做出reaction的堆疊長條圖，所以x要空著，y使用"count"，顏色依照不同的reaction來填滿，"identity"是讓他讀count裡面的數值
+  coord_polar("y", start=0) + #將堆疊長條圖的y軸轉成極座標，如此便能將堆疊長條圖轉成圓餅圖
+  theme_void()+ #去掉原本長條圖的背景(座標軸、背景填滿等)
+  ggtitle(rownames(all.reaction[1,])) #添加標題
+
+print(df) #因為數值過於極端，因此不顯現在圓餅圖上，而是另外列出來
+
+```
+
+### Taichung City
+```{r, message = FALSE}
+df2 <- data.frame(reaction,
+                 count = unlist(as.vector(all.reaction[2,]))
+                 )
+
+df2 <- mutate(df2,percent = round(df2$count/sum(df2$count),digits = 3))
+
+ggplot(data = df2,aes(x="",y = count,fill = reaction)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) + 
+  theme_void()+
+  ggtitle(rownames(all.reaction[2,]))
+
+print(df2)
+```
+
+### Taipei City
+```{r, message = FALSE}
+df3 <- data.frame(reaction,
+                 count = unlist(as.vector(all.reaction[3,]))
+                 )
+
+df3 <- mutate(df3,percent = round(df3$count/sum(df3$count),digits = 3))
+
+ggplot(data = df3,aes(x="",y = count,fill = reaction)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) + 
+  theme_void()+
+  ggtitle(rownames(all.reaction[3,]))
+
+print(df3)
+```
+
+### Kaohsiung City
+```{r, message = FALSE}
+df4 <- data.frame(reaction,
+                 count = unlist(as.vector(all.reaction[4,]))
+                 )
+
+df4 <- mutate(df4,percent = round(df4$count/sum(df4$count),digits = 3))
+
+ggplot(data = df4,aes(x="",y = count,fill = reaction)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) + 
+  theme_void()+
+  ggtitle(rownames(all.reaction[4,]))
+
+print(df4)
+```
+
+### Taoyuan City
+```{r, message = FALSE}
+df5 <- data.frame(reaction,
+                 count = unlist(as.vector(all.reaction[5,]))
+                 )
+
+df5 <- mutate(df5,percent = round(df5$count/sum(df5$count),digits = 3))
+
+ggplot(data = df5,aes(x="",y = count,fill = reaction)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) + 
+  theme_void()+
+  ggtitle(rownames(all.reaction[5,]))
+
+print(df5)
+```
+
+### Tainan City
+```{r, message = FALSE}
+df6 <- data.frame(reaction,
+                 count = unlist(as.vector(all.reaction[6,]))
+                 )
+
+df6 <- mutate(df6,percent = round(df6$count/sum(df6$count),digits = 3))
+
+ggplot(data = df6,aes(x="",y = count,fill = reaction)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) + 
+  theme_void()+
+  ggtitle(rownames(all.reaction[6,]))
+
+print(df6)
+```
+
+
+
+
+
+## 二、每篇貼文得到各表情的平均{.tabset}
+```{r, message=FALSE}
+# each_react_avg 為每篇貼文得到各表情的平均：縱行為各個表情，橫列為各個市長
+# 計算各表情的平均放入 each_react_avg 中
+each_react_avg <- data.frame(
+  "likes" = aggregate(likes_count~city, all.f, mean)[[2]],
+  "love" = aggregate(love_count~city, all.f, mean)[[2]],
+  "haha" = aggregate(haha_count~city, all.f, mean)[[2]],
+  "wow" = aggregate(wow_count~city, all.f, mean)[[2]],
+  "sad" = aggregate(sad_count~city, all.f, mean)[[2]],
+  "angry" = aggregate(angry_count~city, all.f, mean)[[2]]
+)
+
+# 加上 each_react_avg 列名稱後 print 出結果
+names <- c("朱立倫", "林佳龍", "柯文哲", "陳菊", "鄭文燦", "賴清德")
+rownames(each_react_avg) <- names
+print(each_react_avg)
+```
+
+### likes
+```{r, message = FALSE}
+# 畫出貼文得到讚數的平均
+like_plot <- barplot(each_react_avg$likes, 
+                     space = 0,  # bar 的間距
+                     border = NA,   # bar 的邊框
+                     col = rainbow(6, s = 0.6, start = 0.55, end = 0.7),  # bar 的漸層顏色 
+                     names.arg = names,  # 市長名字標籤
+                     main = "average likes")  # 圖標題
+```
+
+### love <3
+```{r, message = FALSE}
+# 畫出貼文得到愛心的平均
+love_plot <- barplot(each_react_avg$love,
+                     space = 0,
+                     border = NA,
+                     col = rainbow(6, s = 0.6, v = 0.8, start = 0.75, end = 1),
+                     names.arg = names,
+                     main = "average love <3")
+```
+
+### haha :D
+```{r, message = FALSE}
+# 畫出貼文得到哈的平均
+haha_plot <- barplot(each_react_avg$haha,
+                     space = 0,
+                     border = NA,
+                     col = rainbow(6, s = 0.5, v = 0.95,  start = 0.06, end = 0.2),
+                     names.arg = names,
+                     main = "average haha :D")
+```
+
+### wow :O
+```{r, message = FALSE}
+# 畫出貼文得到哇的平均
+wow_plot <- barplot(each_react_avg$wow,
+                    space = 0,
+                    border = NA,
+                    col = rainbow(6, s = 0.4, start = 0.2, end = 0.45),
+                    names.arg = names,
+                    main = "average wow :O")
+```
+
+### sad :(
+```{r, message = FALSE}
+# 畫出貼文得到哭哭的平均
+sad_plot <- barplot(each_react_avg$sad,
+                    space = 0,
+                    border = NA,
+                    col = rainbow(6, s = 0.35, v = 0.75, start = 0.5, end = 0.65),
+                    names.arg = names,
+                    main = "average sad :(")
+```
+
+### angry ˋ^ˊ
+```{r, message=FALSE}
+# 畫出貼文得到生氣的平均
+angry_plot <- barplot(each_react_avg$angry,
+                      space = 0,
+                      border = NA,
+                      col = rainbow(6, s = 0.5, start = 0, end = 0.15),
+                      names.arg = names,
+                      main = "average angry ˋ^ˊ")
+```
+
+
+## 三、各市市長各表情符號最高之貼文的比例{.tabset}
+```{r, message = FALSE}
+#算出各貼文最高的表情符號，算出貼文個數並排序
+
+res = data.frame()
+for(i in 1:nrow(all.f)){
+  res = rbind(res, min_rank(all.f[i,3:7]))
+}
+res = cbind(res, all.f[8])
+colnames(res) <- c( "love_count", "haha_count", "wow_count", "sad_count", "angry_count", "city")
+
+```
+
+
+
+
+### Taipei City
+```{r, message = FALSE}
+#統計各表情符號最高之貼文數量
+city.df <-  filter(res, city == "Taipei")
+react_sum <- data.frame("love" = nrow(city.df[city.df$love_count=="5", ]), 
+                         "haha"= nrow(city.df[city.df$haha_count=="5", ]),
+                         "wow"= nrow(city.df[city.df$wow_count=="5", ]), 
+                         "sad" = nrow(city.df[city.df$sad_count=="5", ]), 
+                         "angry" = nrow(city.df[city.df$langry_count=="5", ]))
+#各表情符號最高之貼文的比例(取到小數點後二位)
+react_per = round( react_sum/nrow(city.df), digits = 2)
+print(react_per)
+
+#圓餅圖
+lbls = c("love", "haha", "wow", "sad", "angry" )
+pie(t(react_per), labels = react_per, col = rainbow(5, start=0.1, s=0.7), 
+    main = "柯文哲粉專貼文最常出現表情符號之比例")
+legend("topright", lbls, cex = 0.8, fill = rainbow(5, start=0.1, s=0.7))
+
+```
+
+
+### New Taipei City
+```{r, message = FALSE}
+#統計各表情符號最高之貼文數量
+city.df <-  filter(res, city == "NewTaipei")
+react_sum <- data.frame("love" = nrow(city.df[city.df$love_count=="5", ]), 
+                         "haha"= nrow(city.df[city.df$haha_count=="5", ]),
+                         "wow"= nrow(city.df[city.df$wow_count=="5", ]), 
+                         "sad" = nrow(city.df[city.df$sad_count=="5", ]), 
+                         "angry" = nrow(city.df[city.df$langry_count=="5", ]))
+#各表情符號最高之貼文的比例(取到小數點後二位)
+react_per = round( react_sum/nrow(city.df), digits = 2)
+print(react_per)
+
+#圓餅圖
+lbls = c("love", "haha", "wow", "sad", "angry" )
+pie(t(react_per), labels = react_per, col = rainbow(5, start=0.1, s=0.7), 
+    main = "朱立倫粉專貼文最常出現表情符號之比例")
+legend("topright", lbls, cex = 0.8, fill = rainbow(5, start=0.1, s=0.7))
+
+```
+
+### Tauyuan City
+```{r, message = FALSE}
+#統計各表情符號最高之貼文數量
+city.df <-  filter(res, city == "Tauyuan")
+react_sum <- data.frame("love" = nrow(city.df[city.df$love_count=="5", ]), 
+                         "haha"= nrow(city.df[city.df$haha_count=="5", ]),
+                         "wow"= nrow(city.df[city.df$wow_count=="5", ]), 
+                         "sad" = nrow(city.df[city.df$sad_count=="5", ]), 
+                         "angry" = nrow(city.df[city.df$langry_count=="5", ]))
+#各表情符號最高之貼文的比例(取到小數點後二位)
+react_per = round( react_sum/nrow(city.df), digits = 2)
+print(react_per)
+
+#圓餅圖
+lbls = c("love", "haha", "wow", "sad", "angry" )
+pie(t(react_per), labels = react_per, col = rainbow(5, start=0.1, s=0.7), 
+    main = "鄭文燦粉專貼文最常出現表情符號之比例")
+legend("topright", lbls, cex = 0.8, fill = rainbow(5, start=0.1, s=0.7))
+
+```
+
+
+### Taichung City
+```{r, message = FALSE}
+#統計各表情符號最高之貼文數量
+city.df <-  filter(res, city == "Taichung")
+react_sum <- data.frame("love" = nrow(city.df[city.df$love_count=="5", ]), 
+                         "haha"= nrow(city.df[city.df$haha_count=="5", ]),
+                         "wow"= nrow(city.df[city.df$wow_count=="5", ]), 
+                         "sad" = nrow(city.df[city.df$sad_count=="5", ]), 
+                         "angry" = nrow(city.df[city.df$langry_count=="5", ]))
+#各表情符號最高之貼文的比例(取到小數點後二位)
+react_per = round( react_sum/nrow(city.df), digits = 2)
+print(react_per)
+
+#圓餅圖
+lbls = c("love", "haha", "wow", "sad", "angry" )
+pie(t(react_per), labels = react_per, col = rainbow(5, start=0.1, s=0.7), 
+    main = "林佳龍粉專貼文最常出現表情符號之比例")
+legend("topright", lbls, cex = 0.8, fill = rainbow(5, start=0.1, s=0.7))
+
+```
+
+
+### Tainan City
+```{r, message = FALSE}
+#統計各表情符號最高之貼文數量
+city.df <-  filter(res, city == "Tainan")
+react_sum <- data.frame("love" = nrow(city.df[city.df$love_count=="5", ]), 
+                         "haha"= nrow(city.df[city.df$haha_count=="5", ]),
+                         "wow"= nrow(city.df[city.df$wow_count=="5", ]), 
+                         "sad" = nrow(city.df[city.df$sad_count=="5", ]), 
+                         "angry" = nrow(city.df[city.df$langry_count=="5", ]))
+#各表情符號最高之貼文的比例(取到小數點後二位)
+react_per = round( react_sum/nrow(city.df), digits = 2)
+print(react_per)
+
+#圓餅圖
+lbls = c("love", "haha", "wow", "sad", "angry" )
+pie(t(react_per), labels = react_per, col = rainbow(5, start=0.1, s=0.7), 
+    main = "賴清德粉專貼文最常出現表情符號之比例")
+legend("topright", lbls, cex = 0.8, fill = rainbow(5, start=0.1, s=0.7))
+
+```
+
+
+### Kaohsiung City
+```{r, message = FALSE}
+#統計各表情符號最高之貼文數量
+city.df <-  filter(res, city == "Kaohsiung")
+react_sum <- data.frame("love" = nrow(city.df[city.df$love_count=="5", ]), 
+                         "haha"= nrow(city.df[city.df$haha_count=="5", ]),
+                         "wow"= nrow(city.df[city.df$wow_count=="5", ]), 
+                         "sad" = nrow(city.df[city.df$sad_count=="5", ]), 
+                         "angry" = nrow(city.df[city.df$langry_count=="5", ]))
+#各表情符號最高之貼文的比例(取到小數點後二位)
+react_per = round( react_sum/nrow(city.df), digits = 2)
+print(react_per)
+
+#圓餅圖
+lbls = c("love", "haha", "wow", "sad", "angry" )
+pie(t(react_per), labels = react_per, col = rainbow(5, start=0.1, s=0.7), 
+    main = "陳菊粉專貼文最常出現表情符號之比例")
+legend("topright", lbls, cex = 0.8, fill = rainbow(5, start=0.1, s=0.7))
+
+```
+
