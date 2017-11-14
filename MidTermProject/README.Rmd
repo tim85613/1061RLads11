@@ -6,7 +6,7 @@ output: html_document
 ## 微專案: 六都市長臉書PK:選民情緒反應分析
 
 ### 資料夾內容:
-  > ReadMe.Rmd：專案簡介
+  > README.Rmd：專案簡介
   
   > midtermbonus.Rmd：專案程式碼
   
